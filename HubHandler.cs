@@ -356,7 +356,7 @@ public class HubHandler
         This is so we don't duplicate any or miss giving them any.
         We then verify here if they are missing any in their stud total and add 10k if so
         */
-        if (*PurpleCountAddress < purpleStudCount)
+        while (*PurpleCountAddress < purpleStudCount)
         {
             *PurpleCountAddress += 1;
             *StudTotalBaseAddress += 10000;

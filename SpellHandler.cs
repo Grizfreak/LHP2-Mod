@@ -575,13 +575,13 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
-    // Helper function to unlock an active character spell using archi ID
-    private static void UnlockActiveSpell(int id, bool player1)
-    {
-        int byteOffset = id / 8;
-        int bitOffset = id % 8;
-        UnlockActiveSpell(byteOffset, bitOffset, player1);
-    }
+    // // Helper function to unlock an active character spell using archi ID
+    // private static void UnlockActiveSpell(int id, bool player1)
+    // {
+    //     int byteOffset = id / 8;
+    //     int bitOffset = id % 8;
+    //     UnlockActiveSpell(byteOffset, bitOffset, player1);
+    // }
 
     // Helper function to lock an active character's spell (minifig file)
     private static unsafe void LockActiveSpell(int id)

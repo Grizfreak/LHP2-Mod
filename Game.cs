@@ -1626,7 +1626,7 @@ public class Game
             return;
         }
 
-        byte* player2Pointer = *(byte**)(Mod.BaseAddress + 0xC5D578);
+        byte* player2Pointer = *(byte**)(Mod.BaseAddress + 0xC5D68C);
 
         if (eax2 == player2Pointer)
         {

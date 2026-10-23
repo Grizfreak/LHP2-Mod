@@ -1114,6 +1114,24 @@ public class HubHandler
             AdjustKingsCross();
         }
 
+        AdjustMainCorridor(year, y5GhostPtr);
+
+        if (year == 7 || year == 8)
+        {
+            AdjustWilderness();
+        }
+
+    }
+
+    // Helper function to handle the Weasley lesson loading zone and the courtyard doors in the Main Corridor
+    private static unsafe void AdjustMainCorridor(int year, byte* y5GhostPtr)
+    {
+        if (mainCorridorAddress == MapFlagsBaseAddress + 0x40)
+        {
+            Game.PrintToLog("Main Corridor Save info hasn't been written yet.");
+            return;
+        }
+
         byte* weasleyLessonLoadingZone = mainCorridorAddress + 0x149D;
 
         // Ensure Weasley Lesson loading zone isn't active
@@ -1149,12 +1167,6 @@ public class HubHandler
             courtyardFlags += 2; // Object 4 position
             *courtyardFlags = 56;
         }
-
-        if (year == 7 || year == 8)
-        {
-            AdjustWilderness();
-        }
-
     }
 
     // Helper function to ensure that First Level loading zones aren't active in Leaky Cauldron

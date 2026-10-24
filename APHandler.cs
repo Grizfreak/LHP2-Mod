@@ -21,7 +21,7 @@ public class ArchipelagoHandler
     public ArchipelagoSession Session => _session ?? throw new InvalidOperationException("Session has not been initialized.");
     private LoginSuccessful? _loginSuccessful;
     public SlotData? SlotDataInstance;
-    public static DateTime LastDeathLinkPacketTime = DateTime.Now;
+    public static DateTime LastDeathLinkPacketTime = DateTime.UtcNow;
     private string Server { get; set; }
     private int Port { get; set; }
     private string Slot { get; set; }
@@ -513,7 +513,8 @@ public class ArchipelagoHandler
         }
 
         BouncePacket packet = new();
-        var now = DateTime.Now;
+        // The packet time is a UTC Unix timestamp: local time would be off by the time zone
+        var now = DateTime.UtcNow;
 
         if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
             return true; // Prevent sending too many packets in a short time

@@ -4,12 +4,13 @@ namespace LHP2_Archi_Mod;
 
 public class CharacterHandler
 {
-    private static unsafe byte* characterBaseAddress => *(byte**)(Mod.BaseAddress + 0xC546E4);
+    private static unsafe byte* characterBaseAddress => *(byte**)Addresses.Addr.CharacterSaveBasePtr;
     private static readonly byte TokenOffset = 0xE;
     private static readonly byte unlockOffset = 0xE4;
 
     // Dictionary containing all characters (by their archi ID) and their offset in the character array
-    public static readonly Dictionary<int, int> characterMap = new()
+    // (32-bit indices; see characterMap for the running version)
+    private static readonly Dictionary<int, int> characterMap32 = new()
     {
         {0, 0x3}, // Hagrid
         {1, 0xB}, // Fang
@@ -225,6 +226,29 @@ public class CharacterHandler
         {211, 0x276}, // Xenophilius (Wedding)
         {212, 0x27F}, // Skeleton
     };
+
+    // Collection: PeverellChild (0x2F1) moves to 0x124 and the entries after it shift by +1
+    private const int PeverellChild32 = 0x2F1 - 0x70;
+    private const int PeverellChild64 = 0x124 - 0x70;
+
+    public static int ToGameCharacterIndex(int index32)
+    {
+        if (!Addresses.GameVersion.Is64 || index32 < PeverellChild64)
+            return index32;
+        return index32 == PeverellChild32 ? PeverellChild64 : index32 + 1;
+    }
+
+    // Game character id, 64-bit to 32-bit, for tables keyed by 32-bit ids (characterAbilities)
+    public static int ToOriginalCharacterId(int gameId)
+    {
+        const int peverell32 = PeverellChild32 + 0x70, peverell64 = PeverellChild64 + 0x70;
+        if (!Addresses.GameVersion.Is64 || gameId < peverell64 || gameId == 0xFFFF)
+            return gameId;
+        return gameId == peverell64 ? peverell32 : gameId - 1;
+    }
+
+    public static readonly Dictionary<int, int> characterMap =
+        characterMap32.ToDictionary(kvp => kvp.Key, kvp => ToGameCharacterIndex(kvp.Value));
 
     // Returns the offset when searching the ID
     public static int GetCharacterByteOffset(int id)

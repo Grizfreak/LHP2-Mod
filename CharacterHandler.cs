@@ -304,7 +304,9 @@ public class CharacterHandler
     // Collection seed on the original game: DLC characters that matter in logic get a stand-in
     private static readonly Dictionary<int, int> legacyStandIns = new()
     {
+        {1100, 46}, // Rowena Ravenclaw -> Cho Chang (Ravenclaw)
         {1102, 125}, // Luna (Lion Head) -> Luna Lovegood (Ravenclaw)
+        {1104, 168}, // Lockhart (Straitjacket) -> Padma Patil (Ravenclaw)
         {1107, 21}, // Salazar Slytherin -> Bellatrix Lestrange (dark magic)
     };
 
@@ -332,7 +334,7 @@ public class CharacterHandler
     {
         if (!IsCollectionSeedOnLegacy)
             return;
-        Game.PrintToLog("Collection seed on the original game: DLC purchases sent, Salazar and Luna replaced.");
+        Game.PrintToLog("Collection seed on the original game: DLC purchases sent, logic characters replaced.");
         HintSystem.EnqueueMessage("Collection seed: its DLC characters are replaced on this game.", 0);
         for (int id = DLCCharacterOffset; id < DLCCharacterOffset + 10; id++)
             Game.CheckAndReportLocation(id);

@@ -148,8 +148,32 @@ public class Shops
                 continue;
             divided = entries;
             int count = *(ushort*)(collection + 0xA);
+            if (CharacterHandler.DLCCharactersEnabled)
+                SetDLCCharacterPrices(entries, count);
             ApplyPriceOperation((int*)(entries + 4), count, 0x20 / sizeof(int), multiplier);
             Game.PrintToLog($"[ShopPrices] {count} character prices divided at 0x{(nuint)entries:X}");
+        }
+
+        // Madam Malkin's grid: DLC entries keep their own price (0) instead of pointing into A/B
+        nuint grid = Addr.CharacterPricesC;
+        byte* gridEntries = grid == 0 ? null : *(byte**)grid;
+        if (CharacterHandler.DLCCharactersEnabled && gridEntries != null)
+            SetDLCCharacterPrices(gridEntries, *(ushort*)(grid + 0xA), multiplier);
+    }
+
+    // Entries start with the character's game id (low word), the price is at +4
+    private static unsafe void SetDLCCharacterPrices(byte* entries, int count, int divisor = 1)
+    {
+        foreach (var (gameId, price) in CharacterHandler.DLCCharacterPrices)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (*(ushort*)(entries + i * 0x20) == gameId)
+                {
+                    *(int*)(entries + i * 0x20 + 4) = price / divisor;
+                    break;
+                }
+            }
         }
     }
 

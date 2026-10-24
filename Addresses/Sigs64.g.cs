@@ -123,6 +123,7 @@ internal static partial class Sigs64
         new(SigKind.Rip, "CheatCodeCallback", 0x19DF4C8, "48 8B 05 ?? ?? ?? ?? 48 85 C0 74 0C 49 8B D6", 0, 3, 7, 0x0, 0),
         new(SigKind.Rip, "CharacterPricesA", 0x17E5348, "4C 8B 1D ?? ?? ?? ?? 44 8B C8", 0, 3, 7, 0x0, 0),
         new(SigKind.Rip, "CharacterPricesB", 0x17E5378, "48 8B 05 ?? ?? ?? ?? 48 C1 E1 05", 0, 3, 7, 0x0, 0),
+        new(SigKind.Rip, "CharacterPricesC", 0x17EA398, "48 03 05 ?? ?? ?? ?? 48 89 44 24 58", 0, 3, 7, 0x0, 0),
         new(SigKind.Rip, "WarpEvent", 0x1801D70, "48 8D 15 ?? ?? ?? ?? 48 8B CB 49 8B F8 FF 10 33 ED", 0, 3, 7, 0x8, 0),
         new(SigKind.Rip, "MapFlags", 0x19E2180, "4C 8B 0D ?? ?? ?? ?? 4D 85 C9 75 04", 0, 3, 7, 0x0, 0),
         new(SigKind.Rip, "HubCutscene", 0x19DE838, "48 83 3D ?? ?? ?? ?? 00 74 0A", 0, 3, 8, 0x0, 0),

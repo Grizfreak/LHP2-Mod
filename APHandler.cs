@@ -146,6 +146,7 @@ public class ArchipelagoHandler
             {
                 HintSystem.UpdateConnectionStatusText("Failed To Hook");
             }
+            CharacterHandler.ReleaseDLCPurchasesOnLegacy();
             EnsureBackgroundThreads();
             scouting.Wait();
             ScoutedLocations = scouting.Result;
@@ -166,6 +167,7 @@ public class ArchipelagoHandler
     {
         var ids = new List<long>();
         ids.AddRange(Enumerable.Range(400000, 1030).Select(i => (long)i));
+        ids.AddRange(Enumerable.Range(400000 + CharacterHandler.DLCCharacterOffset, 10).Select(i => (long)i));
         return [.. ids];
     }
 

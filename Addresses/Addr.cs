@@ -92,6 +92,7 @@ internal static class Addr
     // 64-bit: one table of 223 prices (0x20-byte entries), held by two identical objects
     public static nuint CharacterPricesA => Is64 ? Addr64.Get("CharacterPricesA") : 0;
     public static nuint CharacterPricesB => Is64 ? Addr64.Get("CharacterPricesB") : 0;
+    public static nuint CharacterPricesC => Is64 ? Addr64.Get("CharacterPricesC") : 0; // shop grid
 
     // Text pointers of the 24 red bricks in the Leaky Cauldron shop (32-bit addresses)
     private static readonly uint[] RedBrickTextPointers32 =

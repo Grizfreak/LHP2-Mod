@@ -57,7 +57,7 @@ public class Game
     public const int RedBrickCollectOffset = 900;
     public const int RedBrickPurchOffset = 950;
     public const int SpellPurchOffset = 975;
-    public const int MaxItemID = 1030;
+    public const int MaxItemID = CharacterHandler.DLCCharacterOffset + 9; // DLC last
     public string PlayerName = "";
     public Player? Player1;
 
@@ -343,6 +343,9 @@ public class Game
                 break;
             case < 1027: // Handle Spells
                 SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
+                break;
+            case >= CharacterHandler.DLCCharacterOffset and < CharacterHandler.DLCCharacterOffset + 10:
+                CharacterHandler.UnlockDLCCharacter(ItemID);
                 break;
             default:
                 PrintToLog($"Unknown item received: {ItemID}");
@@ -1067,6 +1070,10 @@ public class Game
             PrintToLog("Map ID is: " + mapID);
             return;
         }
+        if (CharacterHandler.IsDLCCharacter(itemID))
+        {
+            return; // Collection DLC characters have no token location
+        }
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
@@ -1093,6 +1100,10 @@ public class Game
             PrintToLog($"EBX is: 0x{ebx:X}");
             PrintToLog("Map ID is: " + mapID);
             return;
+        }
+        if (CharacterHandler.IsDLCCharacter(itemID))
+        {
+            return; // Collection DLC characters have no token location
         }
         CheckAndReportLocation(itemID + tokenOffset);
     }
@@ -1400,6 +1411,9 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(tokenOffset, levelOffset - 25);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
+            // Show DLC purchases as bought too; on the original game they would unlock stand-ins
+            if (GameVersion.Is64)
+                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(CharacterHandler.DLCCharacterOffset, CharacterHandler.DLCCharacterOffset + 9);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
 
@@ -2008,6 +2022,7 @@ public class Game
             CharacterHandler.ResetTokens();
         }
         CharacterHandler.ResetUnlocks();
+        CharacterHandler.UpdateDLCTokens();
         HubHandler.ResetHub();
     }
 

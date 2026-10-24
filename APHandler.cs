@@ -406,7 +406,9 @@ public class ArchipelagoHandler
         {
             var startId = start + gameOffset;
             var endId = end + gameOffset;
-            return Session.Locations.AllLocationsChecked.Count(location => location >= startId && location <= endId);
+            // Count checks not sent yet: the win check runs right after a level is reported
+            return Session.Locations.AllLocationsChecked.Concat(_locationsToCheck).Distinct()
+                .Count(location => location >= startId && location <= endId);
         }
     }
 

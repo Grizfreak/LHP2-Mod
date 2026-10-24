@@ -231,6 +231,9 @@ public class HintSystem
 
     public static unsafe void RestoreWinConText()
     {
+        // Nothing saved yet: writing would leave the "Paused" text pointer null
+        if (OriginalPausedAddress == 0)
+            return;
         uint* pausedTextBaseAddress = *(uint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
         *pausedTextBaseAddress = OriginalPausedAddress;
     }
@@ -267,6 +270,9 @@ public class HintSystem
 
     public static unsafe void RestoreNewGamePtr()
     {
+        // Nothing saved yet: writing would blank the New Game text
+        if (OriginalNewGameText[0] == 0)
+            return;
         for (int i = 0; i < OriginalNewGameText.Length; i++)
         {
             *(NewGameTextAddress + i) = OriginalNewGameText[i];

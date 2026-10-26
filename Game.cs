@@ -40,6 +40,8 @@ public class Game
     private static readonly int[] JokeShopMapIDs = [369, 375, 383, 387];
     private static readonly int[] KnockturnMapIDs = [367, 373, 379, 385];
     private static readonly int[] MadamMalkinMapIDs = [366, 372, 378, 382];
+    // Fake map ID offset so the tracker shows the Collection's Malkin's layout (DLC characters)
+    private const int DLCShopTrackerMapOffset = 10000;
     private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
     private static readonly int[] FinalLevelMapIDs = [351, 339, 334, 329, 318, 308, 246, 235, 227, 220, 217, 207, 165, 156, 152, 148, 143, 137, 82, 73, 65, 58, 51, 44];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
@@ -1307,7 +1309,8 @@ public class Game
 
         PrintToLog($"Map ID updated to {value}.");
         SpellHandler.ClearCharacterCache();
-        Mod.LHP2_Archipelago!.SendMapID(value);
+        bool dlcShop = MadamMalkinMapIDs.Contains(value) && GameVersion.Is64;
+        Mod.LHP2_Archipelago!.SendMapID(dlcShop ? DLCShopTrackerMapOffset + value : value);
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);

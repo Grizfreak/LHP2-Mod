@@ -1515,12 +1515,36 @@ public class HubHandler
         return returningAddress;
     }
 
+    // Save sections: 0x20-byte name, total size, data size, then a pointer (8 bytes, aligned, on 64-bit)
+    private const int SectionTotalSize = 0x20;
+    private const int SectionPointer32 = 0x2C;
+    private const int SectionHeader32 = 0x30;
+    private const int SectionHeader64 = 0x38;
+
+    // The blocks are 32-bit sections: only the header grows on 64-bit, the data is identical
+    private static unsafe int WriteSaveSection(byte* dest, byte[] block)
+    {
+        if (!GameVersion.Is64)
+        {
+            for (int i = 0; i < block.Length; i++)
+                dest[i] = block[i];
+            return *(int*)(dest + SectionTotalSize);
+        }
+        for (int i = 0; i < SectionPointer32; i++)
+            dest[i] = block[i];
+        *(int*)(dest + SectionTotalSize) += SectionHeader64 - SectionHeader32;
+        *(uint*)(dest + SectionPointer32) = 0;
+        *(ulong*)(dest + SectionHeader32) = BitConverter.ToUInt32(block, SectionPointer32);
+        for (int i = SectionHeader32; i < block.Length; i++)
+            dest[i + SectionHeader64 - SectionHeader32] = block[i];
+        return *(int*)(dest + SectionTotalSize);
+    }
+
     public static unsafe void WriteInitialHubSaveFlags()
     {
-        // 64-bit section sizes differ (Diagon 0xC3E, not 0xC36): the 32-bit blocks corrupt the save
-        if (!MapFlagsAvailable || GameVersion.Is64)
+        if (!MapFlagsAvailable)
         {
-            Game.PrintToLog("[Hub] Initial hub save flags skipped on this game version.");
+            Game.PrintToLog("[Hub] Initial hub save flags skipped: map flags container not resolved.");
             return;
         }
         wildernessAddress = GetHubMapAddress("ForestHub", 0);
@@ -1533,16 +1557,11 @@ public class HubHandler
                 Game.PrintToLog("Diagon Save has not been written yet. Returning");
                 return;
             }
-            diagonAddress += 0xC36; // Move the address to the spot after Diagon
+            // Diagon's own size field: 0xC36 on 32-bit, 0xC3E on 64-bit
+            byte* nextSection = diagonAddress + *(int*)(diagonAddress + SectionTotalSize);
             Game.PrintToLog("Writing Foyer & Forest Hub Flags");
-            for (int i = 0; i < SaveDataFlags.FoyerSaveDataFlags.Length; i++)
-            {
-                *(diagonAddress + i) = SaveDataFlags.FoyerSaveDataFlags[i];
-            }
-            for (int i = 0; i < SaveDataFlags.ForestHubSaveDataFlags.Length; i++)
-            {
-                *(diagonAddress + SaveDataFlags.FoyerSaveDataFlags.Length + i) = SaveDataFlags.ForestHubSaveDataFlags[i];
-            }
+            nextSection += WriteSaveSection(nextSection, SaveDataFlags.FoyerSaveDataFlags);
+            WriteSaveSection(nextSection, SaveDataFlags.ForestHubSaveDataFlags);
             Game.PrintToLog("Foyer & Forest Hub Flags written");
             return;
         }

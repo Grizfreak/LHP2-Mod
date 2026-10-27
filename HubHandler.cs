@@ -16,7 +16,7 @@ public class HubHandler
     private static unsafe byte* RedBrickSaveFileAddress => (byte*)StudTotalBaseAddress + Off.RedBrickSaveFile;
     private static unsafe byte* RedBrickEnabledAddress => (byte*)Addr.RedBrickEnabled;
     public static unsafe byte* GhostPathBaseAddress => *(byte**)Addr.LevelBasePtr;
-    // Unresolved on 64-bit: the functions using them are skipped (MapFlagsAvailable, WarpAvailable)
+    // Guards in case a signature is not found: the functions using them are then skipped
     private static bool MapFlagsAvailable => Addr.MapFlagsBasePtr != 0;
     private static unsafe bool WarpAvailable
     {

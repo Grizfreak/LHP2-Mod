@@ -167,13 +167,14 @@ public class Game
         {
             // 64-bit: same patches, at the Collection's sites
             HooksX64.ApplyPatches();
-            HubHandler.InitializeGameMaps();
-            HubHandler.UpdateDarkTimesMap();
         }
         else
         {
             ApplyPatches32();
         }
+        // Change Dark Times Map Constant
+        HubHandler.InitializeGameMaps();
+        HubHandler.UpdateDarkTimesMap();
 
         Shops.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
         Shops.SetShopPointers();
@@ -228,9 +229,6 @@ public class Game
 
         // NOP Code that forces to Dark Times upon save reload
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
-        // Change Dark Times Map Constant
-        HubHandler.InitializeGameMaps();
-        HubHandler.UpdateDarkTimesMap();
 
         // NOP Code that checks to see if you are in Herm Bag Lesson
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x41F9E, [0x90, 0x90]);
@@ -1308,7 +1306,8 @@ public class Game
         }
 
         PrintToLog($"Map ID updated to {value}.");
-        SpellHandler.ClearCharacterCache();
+        if (value == 402 || prevMapID == 402)
+            SpellHandler.ClearCharacterCache();
         bool dlcShop = MadamMalkinMapIDs.Contains(value) && GameVersion.Is64;
         Mod.LHP2_Archipelago!.SendMapID(dlcShop ? DLCShopTrackerMapOffset + value : value);
         ResetItems();

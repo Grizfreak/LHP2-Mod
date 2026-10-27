@@ -136,7 +136,7 @@ public class HintSystem
 
             if (!HintTextAvailable)
             {
-                FlushMessagesToConsole();
+                DiscardPendingMessages();
                 Thread.Sleep(250);
                 continue;
             }
@@ -181,10 +181,7 @@ public class HintSystem
                     {
                         nuint hintCode = SomeLegoHintCode;
                         if (GameVersion.Is64 && !RedirectMessageRecord64(hintCode))
-                        {
-                            Game.PrintToLog("[Hint] " + message.Text);
                             continue;
-                        }
 
                         WriteTextToMemory(message.Text, SomeLegoTextAddress); // Set the designated messaged
                         *HintCodeInterpreterAddress = hintCode; // Set hint system pointer to our message
@@ -201,19 +198,12 @@ public class HintSystem
         }
     }
 
-    // 64-bit fallback: flush the queues to the console so no message is lost
-    private static void FlushMessagesToConsole()
+    // 64-bit fallback: drop the queues, APHandler already logs item and hint messages
+    private static void DiscardPendingMessages()
     {
         lock (interruptedMessageLock)
-        {
-            while (InterruptedMessageList.Count > 0)
-            {
-                Game.PrintToLog("[Hint] " + InterruptedMessageList.First!.Value.Text);
-                InterruptedMessageList.RemoveFirst();
-            }
-        }
-        while (MessageQueue.TryDequeue(out var pending))
-            Game.PrintToLog("[Hint] " + pending.Text);
+            InterruptedMessageList.Clear();
+        MessageQueue.Clear();
     }
 
     /* 
@@ -459,15 +449,21 @@ public class HintSystem
         RedirectNewGameItems64();
     }
 
-    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-    private static extern bool ReadProcessMemory(nint process, nuint address, out nuint buffer, nint size, out nint read);
-
-    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-    private static extern nint GetCurrentProcess();
+    // ReadProcessMemory under the hood: a freed address throws instead of crashing like Memory.Read
+    private static readonly ExternalMemory SelfMemory = new(System.Diagnostics.Process.GetCurrentProcess());
 
     private static bool TryReadPointer(nuint address, out nuint value)
     {
-        return ReadProcessMemory(GetCurrentProcess(), address, out value, IntPtr.Size, out nint read) && read == IntPtr.Size;
+        try
+        {
+            value = SelfMemory.Read<nuint>(address);
+            return true;
+        }
+        catch (Reloaded.Memory.Exceptions.MemoryException)
+        {
+            value = 0;
+            return false;
+        }
     }
 
     // Nothing to write back: the menu entry is freed when a game starts, and our buffer stays valid

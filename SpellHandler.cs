@@ -694,7 +694,7 @@ public class SpellHandler
         return null;
     }
 
-    // Entries are recreated when a save loads, so the cache is cleared on every map change
+    // Entries are recreated when a save loads, which always goes through the menu (map 402)
     public static void ClearCharacterCache()
     {
         lock (CharacterEntryCache)

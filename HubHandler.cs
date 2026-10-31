@@ -1484,11 +1484,26 @@ public class HubHandler
     }
 
     // This is the helper function to search the save file container for the address where the wanted map is stored
+    // Offsets are measured on 32-bit saves; the 64-bit section header is 8 bytes longer
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
+    {
+        byte* section = FindSaveSection(mapName);
+        if (section == MapFlagsBaseAddress + 0x40)
+        {
+            return section;
+        }
+        int headerShift = GameVersion.Is64 ? SectionHeader64 - SectionHeader32 : 0;
+        byte* returningAddress = section + headerShift + offset;
+        // TODO: Adjust this print statement to be more meaningful
+        Game.PrintToLog($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
+        return returningAddress;
+    }
+
+    // Returns the start of the section header, or the container start if the map isn't saved yet
+    private static unsafe byte* FindSaveSection(string mapName)
     {
         const int sectionSize = 300000; // Number of bytes we want to search in the Map container
         byte* startingAddress = MapFlagsBaseAddress + 0x40;
-        byte* returningAddress = startingAddress;
         byte[] sectionHeader = Encoding.ASCII.GetBytes(mapName); // Map names are ASCII coded in the save file with flags right after
 
         // We use a nested for loop to search through the container for the map name
@@ -1506,13 +1521,11 @@ public class HubHandler
             }
             if (isMatch)
             {
-                returningAddress = startingAddress + i + offset;
-                break;
+                return startingAddress + i;
             }
         }
-        // TODO: Adjust this print statement to be more meaningful
-        Game.PrintToLog($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
-        return returningAddress;
+        Game.PrintToLog($"Map Flags for {mapName} not found");
+        return startingAddress;
     }
 
     // Save sections: 0x20-byte name, total size, data size, then a pointer (8 bytes, aligned, on 64-bit)
@@ -1548,10 +1561,10 @@ public class HubHandler
             return;
         }
         wildernessAddress = GetHubMapAddress("ForestHub", 0);
-        byte* knockturnAddress = GetHubMapAddress("Knockturn", 0);
+        byte* knockturnAddress = FindSaveSection("Knockturn");
         if (wildernessAddress == MapFlagsBaseAddress + 0x40 && knockturnAddress == MapFlagsBaseAddress + 0x40)
         {
-            byte* diagonAddress = GetHubMapAddress("HubDiagon", 0);
+            byte* diagonAddress = FindSaveSection("HubDiagon");
             if (diagonAddress == MapFlagsBaseAddress + 0x40)
             {
                 Game.PrintToLog("Diagon Save has not been written yet. Returning");

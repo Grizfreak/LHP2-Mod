@@ -515,23 +515,11 @@ public class HubHandler
     // The following function is our current implementation of how to time travel & Fast Travel back to Hogwarts.
     public static unsafe void FastTravel(string mapRequested)
     {
-        // Verify that the player has completed DADA banned in game before time travelling
-        // The game doesn't really allow you to be in future years if DADA banned isn't completed
-        byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
-        if ((*y5GhostPtr & (1 << 2)) == 0)
+        string? blocker = FastTravelBlocker(mapRequested);
+        if (blocker != null)
         {
-            Game.PrintToLog("Please complete DADA Banned Lesson before changing years");
+            Game.PrintToLog(blocker);
             return;
-        }
-
-        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
-        if (mapRequested == "Y6QUAD" || mapRequested == "Y6FOYE")
-        {
-            if ((*y6GhostPtr & (1 << 2)) == 0 || (*y6GhostPtr & (1 << 3)) == 0)
-            {
-                Game.PrintToLog("Please complete Specs Lesson & Arrive to Y6 Hogwarts before fast travelling to Year 6 Hogwarts.");
-                return;
-            }
         }
 
         if (!TryGetTargetYear(mapRequested, out int year))
@@ -556,11 +544,40 @@ public class HubHandler
             return;
         }
 
-        byte* N0CUT5CheatCodeConstant = (byte*)Addr.N0CUT5String;
-        HintSystem.WriteTextToMemory(mapRequested, (nuint)N0CUT5CheatCodeConstant);
-
         currentMap.UpdateMap(destinationMap.MapConstant);
         AdjustLeakyMapConstants(destinationMap.MapConstant, destinationMap.EntranceConstant);
+    }
+
+    // Why a travel code can't be used yet, or null if it can
+    public static unsafe string? FastTravelBlocker(string mapRequested)
+    {
+        // The game doesn't really allow you to be in future years if DADA banned isn't completed
+        byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
+        if ((*y5GhostPtr & (1 << 2)) == 0)
+        {
+            return "Complete the DADA Banned lesson before changing years.";
+        }
+
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        if ((mapRequested == "Y6QUAD" || mapRequested == "Y6FOYE")
+            && ((*y6GhostPtr & (1 << 2)) == 0 || (*y6GhostPtr & (1 << 3)) == 0))
+        {
+            return "Complete the Spectrespecs lesson and the Y6 Start of Term Feast first.";
+        }
+        return null;
+    }
+
+    // Shown when a travel code is accepted, e.g. "Y6QUAD" -> "Year 6 Quad"
+    public static string FastTravelDestinationName(string mapRequested)
+    {
+        string place = mapRequested[2..] switch
+        {
+            "LOND" => "London",
+            "FOYE" => "Foyer",
+            "QUAD" => "Quad",
+            _ => mapRequested[2..]
+        };
+        return $"Year {mapRequested[1]} {place}";
     }
 
     private static Map? LookUpMap(string mapKey)

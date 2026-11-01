@@ -2052,9 +2052,31 @@ public class Game
         HintSystem.WriteTextToMemory(message, (nuint)_codeAnswerText);
     }
 
-    private static bool IsModCheatCode(string code, int mapID)
+    private static long _lastTravelRefusal;
+    private static nint _travelAnswerText;
+
+    // Accepted codes get their text on the code screen; refused ones explain why in a message
+    private static unsafe bool AnswerTravelCode(string code, int mapID, nint* text)
     {
-        return code == WinConCode || (LeakyMapIDs.Contains(mapID) && FastTravelRequests.Contains(code));
+        string? refusal = LeakyMapIDs.Contains(mapID)
+            ? HubHandler.FastTravelBlocker(code)
+            : "Travel codes only work in the Leaky Cauldron.";
+        if (refusal != null)
+        {
+            // Held or repeated confirms ask again: one message until 2 s of quiet
+            long now = Environment.TickCount64;
+            if (now - _lastTravelRefusal >= 2000)
+                HintSystem.EnqueueMessage(refusal, 0);
+            _lastTravelRefusal = now;
+            return false;
+        }
+        if (_travelAnswerText == 0)
+            _travelAnswerText = System.Runtime.InteropServices.Marshal.AllocHGlobal(256);
+        string destination = HubHandler.FastTravelDestinationName(code);
+        HintSystem.WriteTextToMemory($"{destination}: go through the door to London.", (nuint)_travelAnswerText);
+        if (text != null)
+            *text = _travelAnswerText;
+        return true;
     }
 
     // The game asks this slot about the codes it doesn't know; it never sets it itself
@@ -2082,9 +2104,11 @@ public class Game
         {
             string entered = System.Runtime.InteropServices.Marshal.PtrToStringAnsi((nint)code) ?? "";
             int mapID = Mod.GameInstance?.MapID ?? 0;
-            if (!IsModCheatCode(entered, mapID))
+            if (FastTravelRequests.Contains(entered))
+                return AnswerTravelCode(entered, mapID, text) ? 1 : 0;
+            if (entered != WinConCode)
                 return 0;
-            if (entered == WinConCode && text != null && _codeAnswerText != 0)
+            if (text != null && _codeAnswerText != 0)
                 *text = _codeAnswerText;
             return 1;
         }

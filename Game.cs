@@ -2108,6 +2108,15 @@ public class Game
                 return AnswerTravelCode(entered, mapID, text) ? 1 : 0;
             if (entered != WinConCode)
                 return 0;
+            // Built here too: this can run without CheckWinCon having answered first
+            string? status = WinConStatus(out _);
+            if (status != null)
+            {
+                if (_codeAnswerText == 0)
+                    _codeAnswerText = System.Runtime.InteropServices.Marshal.AllocHGlobal(256);
+                HintSystem.WriteTextToMemory(status, (nuint)_codeAnswerText);
+            }
+            PrintToLog($"[Codes] WINCON answered: {status ?? "no slot data"}");
             if (text != null && _codeAnswerText != 0)
                 *text = _codeAnswerText;
             return 1;
@@ -2134,7 +2143,7 @@ public class Game
             }
             if (requested)
             {
-                AnswerWinCon($"Horcruxes Collected: {horcruxesReceived}/{requiredHorcruxes}. Defeat Voldemort to win.");
+                AnswerWinCon(WinConStatus(out _)!);
                 return;
             }
             if (Mod.GameInstance!.PrevLevelID != 27 && Mod.GameInstance!.LevelID != 27)
@@ -2158,16 +2167,36 @@ public class Game
                 return;
             }
             PrintToLog($"Player Has Completed {levelsCompleted} Levels");
-            if (levelsCompleted >= requiredLevels)
+            string status = WinConStatus(out bool complete)!;
+            if (complete)
             {
                 Mod.LHP2_Archipelago!.Release();
-                AnswerWinCon("Goal complete!");
             }
-            else
-            {
-                AnswerWinCon($"Levels Beaten: {levelsCompleted}/{requiredLevels}");
-            }
+            AnswerWinCon(status);
             return;
         }
+    }
+
+    // The WINCON answer, or null when the slot data doesn't say what the goal needs
+    private static string? WinConStatus(out bool complete)
+    {
+        complete = false;
+        var slotData = Mod.LHP2_Archipelago!.SlotDataInstance!;
+        if (slotData.EndGoal == 0)
+        {
+            int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+            if (slotData.NumberOfRequiredHorcruxes == -1)
+                return null;
+            return $"Horcruxes Collected: {horcruxesReceived}/{slotData.NumberOfRequiredHorcruxes}. Defeat Voldemort to win.";
+        }
+        if (slotData.EndGoal == 2)
+        {
+            int levelsCompleted = Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
+            if (slotData.NumberOfRequiredLevels == -1)
+                return null;
+            complete = levelsCompleted >= slotData.NumberOfRequiredLevels;
+            return complete ? "Goal complete!" : $"Levels Beaten: {levelsCompleted}/{slotData.NumberOfRequiredLevels}";
+        }
+        return null;
     }
 }

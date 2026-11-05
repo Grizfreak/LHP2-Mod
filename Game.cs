@@ -2052,9 +2052,31 @@ public class Game
         HintSystem.WriteTextToMemory(message, (nuint)_codeAnswerText);
     }
 
-    private static bool IsModCheatCode(string code, int mapID)
+    private static long _lastTravelRefusal;
+    private static nint _travelAnswerText;
+
+    // Accepted codes get their text on the code screen; refused ones explain why in a message
+    private static unsafe bool AnswerTravelCode(string code, int mapID, nint* text)
     {
-        return code == WinConCode || (LeakyMapIDs.Contains(mapID) && FastTravelRequests.Contains(code));
+        string? refusal = LeakyMapIDs.Contains(mapID)
+            ? HubHandler.FastTravelBlocker(code)
+            : "Travel codes only work in the Leaky Cauldron.";
+        if (refusal != null)
+        {
+            // Held or repeated confirms ask again: one message until 2 s of quiet
+            long now = Environment.TickCount64;
+            if (now - _lastTravelRefusal >= 2000)
+                HintSystem.EnqueueMessage(refusal, 0);
+            _lastTravelRefusal = now;
+            return false;
+        }
+        if (_travelAnswerText == 0)
+            _travelAnswerText = System.Runtime.InteropServices.Marshal.AllocHGlobal(256);
+        string destination = HubHandler.FastTravelDestinationName(code);
+        HintSystem.WriteTextToMemory($"{destination}: go through the door to London.", (nuint)_travelAnswerText);
+        if (text != null)
+            *text = _travelAnswerText;
+        return true;
     }
 
     // The game asks this slot about the codes it doesn't know; it never sets it itself
@@ -2082,9 +2104,20 @@ public class Game
         {
             string entered = System.Runtime.InteropServices.Marshal.PtrToStringAnsi((nint)code) ?? "";
             int mapID = Mod.GameInstance?.MapID ?? 0;
-            if (!IsModCheatCode(entered, mapID))
+            if (FastTravelRequests.Contains(entered))
+                return AnswerTravelCode(entered, mapID, text) ? 1 : 0;
+            if (entered != WinConCode)
                 return 0;
-            if (entered == WinConCode && text != null && _codeAnswerText != 0)
+            // Built here too: this can run without CheckWinCon having answered first
+            string? status = WinConStatus(out _);
+            if (status != null)
+            {
+                if (_codeAnswerText == 0)
+                    _codeAnswerText = System.Runtime.InteropServices.Marshal.AllocHGlobal(256);
+                HintSystem.WriteTextToMemory(status, (nuint)_codeAnswerText);
+            }
+            PrintToLog($"[Codes] WINCON answered: {status ?? "no slot data"}");
+            if (text != null && _codeAnswerText != 0)
                 *text = _codeAnswerText;
             return 1;
         }
@@ -2110,7 +2143,7 @@ public class Game
             }
             if (requested)
             {
-                AnswerWinCon($"Horcruxes Collected: {horcruxesReceived}/{requiredHorcruxes}. Defeat Voldemort to win.");
+                AnswerWinCon(WinConStatus(out _)!);
                 return;
             }
             if (Mod.GameInstance!.PrevLevelID != 27 && Mod.GameInstance!.LevelID != 27)
@@ -2134,16 +2167,36 @@ public class Game
                 return;
             }
             PrintToLog($"Player Has Completed {levelsCompleted} Levels");
-            if (levelsCompleted >= requiredLevels)
+            string status = WinConStatus(out bool complete)!;
+            if (complete)
             {
                 Mod.LHP2_Archipelago!.Release();
-                AnswerWinCon("Goal complete!");
             }
-            else
-            {
-                AnswerWinCon($"Levels Beaten: {levelsCompleted}/{requiredLevels}");
-            }
+            AnswerWinCon(status);
             return;
         }
+    }
+
+    // The WINCON answer, or null when the slot data doesn't say what the goal needs
+    private static string? WinConStatus(out bool complete)
+    {
+        complete = false;
+        var slotData = Mod.LHP2_Archipelago!.SlotDataInstance!;
+        if (slotData.EndGoal == 0)
+        {
+            int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+            if (slotData.NumberOfRequiredHorcruxes == -1)
+                return null;
+            return $"Horcruxes Collected: {horcruxesReceived}/{slotData.NumberOfRequiredHorcruxes}. Defeat Voldemort to win.";
+        }
+        if (slotData.EndGoal == 2)
+        {
+            int levelsCompleted = Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
+            if (slotData.NumberOfRequiredLevels == -1)
+                return null;
+            complete = levelsCompleted >= slotData.NumberOfRequiredLevels;
+            return complete ? "Goal complete!" : $"Levels Beaten: {levelsCompleted}/{slotData.NumberOfRequiredLevels}";
+        }
+        return null;
     }
 }

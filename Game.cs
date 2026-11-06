@@ -181,6 +181,10 @@ public class Game
         SpellHandler.LockBoxes();
 
         Mod.GameInstance!.Player1 = new Player((byte*)Addr.Player1Ptr, 0);
+
+        int deathCount = Mod.LHP2_Archipelago!.GetDataStorageValue("deathCount");
+        PrintToLog($"Setting Death Count: {deathCount}");
+        Player.InitiateDeathLinkCount(deathCount);
     }
 
     // NOPs and patches of the original 32-bit exe (unchanged)
@@ -1309,7 +1313,7 @@ public class Game
         if (value == 402 || prevMapID == 402)
             SpellHandler.ClearCharacterCache();
         bool dlcShop = MadamMalkinMapIDs.Contains(value) && GameVersion.Is64;
-        Mod.LHP2_Archipelago!.SendMapID(dlcShop ? DLCShopTrackerMapOffset + value : value);
+        Mod.LHP2_Archipelago!.UpdateDataStorage("map", dlcShop ? DLCShopTrackerMapOffset + value : value);
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);

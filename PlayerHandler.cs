@@ -44,7 +44,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
 
     // Lock and Variable to ensure that Deaths aren't sent when we receive death
     private readonly object _receivedDeathLock = new();
-    private bool _receivedDeath; 
+    private bool _receivedDeath;
 
     // Variables and functions relating to receiving a negative effect
     private int _receiveDeathAmnesty = amnesty;
@@ -390,25 +390,40 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         }
         QueueOutboundDeathLink();
     }
-    private int _nextOutboundDeathLinkId;
+
+    // This variable is used to count the number of deaths that the player has sent. Additionally, it is a unique identifier for queued deathlinks
+    private static int _nextOutboundDeathLinkId;
+    // bool variable to keep track of whether the outbound deathlink background thread is running
+    // We don't want multiple of the same threads to start if the player disconnects from the server temporarily
     private bool _isProcessingOutboundDeathLinks;
+
+    // This function increments the death count, adds the death to the outbound queue, prints a message indicating
+    // how many deaths the player caused, and updates the death count in data storage
     private void QueueOutboundDeathLink()
     {
         int id;
         lock (_outboundDeathLinkQueueLock)
         {
-            id = _nextOutboundDeathLinkId++;
+            id = ++_nextOutboundDeathLinkId;
             _outboundDeathLinkQueue.Enqueue(id);
             if (_isProcessingOutboundDeathLinks)
             {
+                HintSystem.AddInterruptedMessageToFront($"Sending Death. You have caused {id} deaths", 0);
+                Mod.LHP2_Archipelago!.UpdateDataStorage("deathCount", id);
                 return;
             }
 
             _isProcessingOutboundDeathLinks = true;
         }
-        HintSystem.AddInterruptedMessageToFront($"Sending Death. You have caused {id + 1} deaths", 0);
-        //TODO: add death count to data storage
+        HintSystem.AddInterruptedMessageToFront($"Sending Death. You have caused {id} deaths", 0);
+        Mod.LHP2_Archipelago!.UpdateDataStorage("deathCount", id);
         StartBackgroundProcessor(ProcessOutboundDeathLinkQueue, "OutboundDeathLinkProcessor");
+    }
+
+    // This helper function sets the death count in between sessions
+    public static void InitiateDeathLinkCount(int count)
+    {
+        _nextOutboundDeathLinkId = count;
     }
 
     private void ProcessOutboundDeathLinkQueue()

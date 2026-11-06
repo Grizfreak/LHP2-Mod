@@ -137,7 +137,9 @@ public class ArchipelagoHandler
             // Store our slot name in game to access later
             Mod.GameInstance!.PlayerName = Slot;
             // Tell DataStorage we are on the menu
-            Session.DataStorage[Scope.Slot, "map"] = 402;
+            Session.DataStorage[Scope.Slot, "map"].Initialize(402);
+            // Initialize the death Count. Does not overwrite an existing value if player is reconnecting
+            Session.DataStorage[Scope.Slot, "deathCount"].Initialize(0);
             if (isHooked)
             {
                 HintSystem.UpdateConnectionStatusText("Ready to Play");
@@ -500,10 +502,18 @@ public class ArchipelagoHandler
         return 5; // Default flag which is gray
     }
 
-    // We pass the Map ID to data storage for auto tracking purposes
-    public void SendMapID(int MapID)
+    // This function is used to update the value in Data Storage
+    // It is currently used for map auto tracking and keeping track of deaths sent
+    public void UpdateDataStorage(string type, int value)
     {
-        Session.DataStorage[Scope.Slot, "map"] = MapID;
+        Session.DataStorage[Scope.Slot, type] = value;
+    }
+
+    // This helper function is to read teh value of a variable in Data Storage
+    // This is currently used to keep track of deaths
+    public int GetDataStorageValue(string type)
+    {
+        return Session.DataStorage[Scope.Slot, type];
     }
 
     private double LastReceivedDeath = 0;

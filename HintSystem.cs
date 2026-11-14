@@ -343,7 +343,7 @@ public class HintSystem
 
     // New Game text on the main menu. We show connection status here.
     public static unsafe byte* NewGameTextAddress => *(byte**)(*(byte**)Addr.NewGameTextPtr + Off.NewGameText);
-    private static byte[] OriginalNewGameText = new byte[30];
+    private static byte[] OriginalNewGameText = new byte[40];
 
     public static unsafe void UpdateConnectionStatusText(string status)
     {
@@ -423,7 +423,7 @@ public class HintSystem
         return found;
     }
 
-    private static unsafe void UpdateConnectionStatusText64(string status)
+    private static void UpdateConnectionStatusText64(string status)
     {
         WriteTextToMemory(status, OwnNewGameText);
         _newGameStatus64 = status;
@@ -432,7 +432,7 @@ public class HintSystem
     }
 
     // Entry 0xF6 of the text table, the string the menu entry points to
-    private static unsafe nuint GameNewGameString64()
+    private static nuint GameNewGameString64()
     {
         if (Addr.TextTablePtr == 0 || !TryReadPointer(Addr.TextTablePtr, out nuint table) || table == 0)
             return 0;

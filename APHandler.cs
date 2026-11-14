@@ -31,7 +31,8 @@ public class ArchipelagoHandler
 
     public static bool IsConnected;
     public static bool IsConnecting;
-    public static int gameOffset = 400000;
+    public const int gameOffset = 400000;
+    public static bool IsHooked;
 
     private Thread? _locationsThread;
     private Thread? _hintThread;
@@ -132,22 +133,14 @@ public class ArchipelagoHandler
             var locationIDs = BuildLocationIds();
             var scouting = Session.Locations.ScoutLocationsAsync(HintCreationPolicy.None, locationIDs);
             HintSystem.UpdateConnectionStatusText("Hooking, Please Wait");
-            // Modify the game now that we are connected
-            bool isHooked = Mod.InitOnMenu();
+            IsHooked = Mod.InitOnMenu();
             // Store our slot name in game to access later
             Mod.GameInstance!.PlayerName = Slot;
             // Tell DataStorage we are on the menu
             Session.DataStorage[Scope.Slot, "map"].Initialize(402);
             // Initialize the death Count. Does not overwrite an existing value if player is reconnecting
             Session.DataStorage[Scope.Slot, "deathCount"].Initialize(0);
-            if (isHooked)
-            {
-                HintSystem.UpdateConnectionStatusText("Ready to Play");
-            }
-            else
-            {
-                HintSystem.UpdateConnectionStatusText("Failed To Hook");
-            }
+            UpdateNewGameText();
             CharacterHandler.ReleaseDLCPurchasesOnLegacy();
             EnsureBackgroundThreads();
             scouting.Wait();
@@ -162,6 +155,26 @@ public class ArchipelagoHandler
         Game.PrintToLog(errorMessage);
         Game.PrintToLog($"Attempting reconnect...");
         return false;
+    }
+
+    public static void UpdateNewGameText()
+    {
+        int APWorld = Mod.LHP2_Archipelago!.SlotDataInstance!.APWorldVersion;
+        bool isHooked = IsHooked;
+        bool versionAgree = Mod.ModVersion == APWorld;
+        if (isHooked && versionAgree)
+        {
+            HintSystem.UpdateConnectionStatusText("Ready to Play");
+        }
+        else if (!isHooked)
+        {
+            HintSystem.UpdateConnectionStatusText("Failed To Hook");
+        }
+        else if (!versionAgree)
+        {
+            HintSystem.UpdateConnectionStatusText($"Version Mismatch: AP: {APWorld}, Mod:{Mod.ModVersion}");
+            Game.PrintToLog($"APWorld Version: {APWorld}, Mod Version: {Mod.ModVersion}");
+        }
     }
 
     // Function to build an array of all location IDs in the game for scouting purposes. 

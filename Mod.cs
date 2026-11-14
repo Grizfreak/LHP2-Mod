@@ -21,6 +21,7 @@ public class Mod : ModBase // <= Do not Remove.
     public static ArchipelagoHandler? LHP2_Archipelago;
     public static Game? GameInstance;
     public static nuint BaseAddress;
+    public static int ModVersion = 119;
 
     public Mod(ModContext context)
     {
@@ -143,7 +144,7 @@ public class Mod : ModBase // <= Do not Remove.
             Game.PrintToLog("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(_hooks);
             Game.InstallCheatCodeCallback();
-            Game.PrintToLog("Hooks set up complete. You may now load a save file.");
+            Game.PrintToLog("Hooks set up complete.");
             return true;
         }
 

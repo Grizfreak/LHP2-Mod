@@ -246,7 +246,11 @@ public class LevelHandler
                 HubHandler.UpdateDarkTimesMap();
                 if (ArchipelagoHandler.IsConnected)
                 {
-                    HintSystem.UpdateConnectionStatusText("Ready to Play");
+                    ArchipelagoHandler.UpdateNewGameText();
+                }
+                else
+                {
+                    HintSystem.UpdateConnectionStatusText("Not Connected to AP");
                 }
                 break;
             default:

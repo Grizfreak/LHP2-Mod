@@ -14,6 +14,7 @@ public class SlotData(Dictionary<string, object> slotData)
     public int FasterDuels => GetIntSlotValue("FasterDuels");
     // 0 = Legacy, 1 = Collection; absent from older APWorlds (-1, same as Legacy)
     public int SeedGameVersion => GetIntSlotValue("GameVersion");
+    public int APWorldVersion => GetIntSlotValue("APWorldVersion");
 
     private int GetIntSlotValue(string key)
     {
@@ -58,6 +59,7 @@ public class SlotData(Dictionary<string, object> slotData)
         Game.PrintToLog($"Cheaper Shops Multiplier: {CheaperShops}");
         Game.PrintToLog($"Faster Duels: {FasterDuels}");
         Game.PrintToLog($"Game Version: {SeedGameVersion}");
+        Game.PrintToLog($"APWorld Version: {APWorldVersion}");
 
 
         if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || NumberOfRequiredLevels == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1 || FasterDuels == -1)

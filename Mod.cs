@@ -21,7 +21,8 @@ public class Mod : ModBase // <= Do not Remove.
     public static ArchipelagoHandler? LHP2_Archipelago;
     public static Game? GameInstance;
     public static nuint BaseAddress;
-    public static int ModVersion = 119;
+    // Mod version to compare with APWorld. Since Slot data comes across as ints, multiplying version by 100
+    public const int ModVersion = 119;
 
     public Mod(ModContext context)
     {

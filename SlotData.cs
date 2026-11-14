@@ -14,6 +14,7 @@ public class SlotData(Dictionary<string, object> slotData)
     public int FasterDuels => GetIntSlotValue("FasterDuels");
     // 0 = Legacy, 1 = Collection; absent from older APWorlds (-1, same as Legacy)
     public int SeedGameVersion => GetIntSlotValue("GameVersion");
+    // Determines what the APWorld version is in Slot Data. We multiply by 100 since Slot Data uses ints
     public int APWorldVersion => GetIntSlotValue("APWorldVersion");
 
     private int GetIntSlotValue(string key)

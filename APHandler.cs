@@ -157,6 +157,7 @@ public class ArchipelagoHandler
         return false;
     }
 
+    // This is a helper function that compares the APWorld and Mod Versions. If they don't agree, they will print the versions over the New Game Text
     public static void UpdateNewGameText()
     {
         int APWorld = Mod.LHP2_Archipelago!.SlotDataInstance!.APWorldVersion;

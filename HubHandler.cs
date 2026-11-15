@@ -392,10 +392,10 @@ public class HubHandler
             ushort offset = (ushort)(itemID - 800);
             address += offset;
         }
-        Game.PrintToLog($"Address: 0x{(nuint)address:X}");
-        Game.PrintToLog($"Stud Total address 0x{(nuint)StudTotalBaseAddress:X}");
-        Game.PrintToLog($"Item Count: {itemCount}");
-        Game.PrintToLog($"Value in Memory: {*address}");
+        // Game.PrintToLog($"Address: 0x{(nuint)address:X}");
+        // Game.PrintToLog($"Stud Total address 0x{(nuint)StudTotalBaseAddress:X}");
+        // Game.PrintToLog($"Item Count: {itemCount}");
+        // Game.PrintToLog($"Value in Memory: {*address}");
 
         while (*address < itemCount)
         {

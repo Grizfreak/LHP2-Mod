@@ -146,6 +146,9 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
 
     public void ReceiveTrap(int itemID)
     {
+        if (itemID > 804 || itemID < 800)
+            return;
+
         EffectType trap = itemID switch
         {
             800 => EffectType.Stupefy,
@@ -162,7 +165,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     {
         if (PointerToPlayerStruct == null)
         {
-            Game.PrintToLog("Cannot receive negative effect: PointerToPlayerStruct is null.");
+            // Game.PrintToLog("Cannot receive negative effect: PointerToPlayerStruct is null.");
             return false;
         }
         if (*PlayerStateAnimation != (ushort)EffectType.Default) // Player isn't performing any animation

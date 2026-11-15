@@ -12,8 +12,9 @@ public class HubHandler
     private static unsafe long* StudTotalBaseAddress => *(long**)Addr.StudTotalPtr;
     // Mod storage inside the save: unused header bytes, same offsets on 32-bit and 64-bit
     private static bool ModSaveStorageAvailable => Off.PurpleStudCount >= 0 && Off.RedBrickSaveFile >= 0;
-    public static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + Off.PurpleStudCount;
-    private static unsafe byte* RedBrickSaveFileAddress => (byte*)StudTotalBaseAddress + Off.RedBrickSaveFile;
+    private static unsafe ushort* PurpleCountAddress => (ushort*)((byte*)StudTotalBaseAddress - Off.PurpleStudCount);
+    private static unsafe ushort* TrapArrayAddress => PurpleCountAddress + 0x1;
+    private static unsafe byte* RedBrickSaveFileAddress => (byte*)StudTotalBaseAddress - Off.RedBrickSaveFile;
     private static unsafe byte* RedBrickEnabledAddress => (byte*)Addr.RedBrickEnabled;
     public static unsafe byte* GhostPathBaseAddress => *(byte**)Addr.LevelBasePtr;
     // Guards in case a signature is not found: the functions using them are then skipped
@@ -362,13 +363,13 @@ public class HubHandler
         }
     }
 
-    // This is a helper function to handle when the player receives a purple stud.
-    public static unsafe void HandlePurpleStud()
+    // This is a helper function to handle when the player receives an item we don't want them to receive multiple times
+    public static unsafe void HandleSaveFileItems(int itemID, bool isTrap)
     {
-        // Because we switch between game states, verify how many purple studs the player has received
-        int purpleStudCount = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(699);
+        // Because we switch between game states, verify the count of items we don't want them to receive multiple times
+        int itemCount = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(itemID);
 
-        if (purpleStudCount == 0)
+        if (itemCount == 0)
         {
             return;
         }
@@ -381,19 +382,38 @@ public class HubHandler
 
         if (StudTotalBaseAddress == null || PurpleCountAddress == null)
         {
-            Game.PrintToLog($"Can't Update Stud Total, null pointer at 0x{(nuint)StudTotalBaseAddress:X}");
+            Game.PrintToLog($"Can't Update Item Received Total, null pointer for Stud Total Address");
             return;
         }
 
-        /* 
-        In Purple Count Address, I write to the save file how many purple studs we have given the player. 
-        This is so we don't duplicate any or miss giving them any.
-        We then verify here if they are missing any in their stud total and add 10k if so
-        */
-        while (*PurpleCountAddress < purpleStudCount)
+        ushort* address = isTrap ? TrapArrayAddress : PurpleCountAddress;
+        if (isTrap)
         {
-            *PurpleCountAddress += 1;
-            *StudTotalBaseAddress += 10000;
+            ushort offset = (ushort)(itemID - 800);
+            address += offset;
+        }
+        Game.PrintToLog($"Address: 0x{(nuint)address:X}");
+        Game.PrintToLog($"Stud Total address 0x{(nuint)StudTotalBaseAddress:X}");
+        Game.PrintToLog($"Item Count: {itemCount}");
+        Game.PrintToLog($"Value in Memory: {*address}");
+
+        while (*address < itemCount)
+        {
+            if (Mod.GameInstance!.Player1 == null)
+            {
+                Mod.LHP2_Archipelago!.EnqueueItem(itemID);
+                return;
+            }
+
+            if (!isTrap)
+            {
+                *StudTotalBaseAddress += 10000;
+            }
+            else
+            {
+                Mod.GameInstance!.Player1.ReceiveTrap(itemID);
+            }
+            *address += 1;
         }
     }
 

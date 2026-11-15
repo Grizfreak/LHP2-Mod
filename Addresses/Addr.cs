@@ -168,8 +168,8 @@ internal static class Off
     public static int WarpHogwartsEntrance => V(0x31C, 0x700);
 
     // Mod storage in unused save header bytes ([StudTotalPtr]), same layout on both versions
-    public static int PurpleStudCount => V(0x30, 0x30);
-    public static int RedBrickSaveFile => V(0x34, 0x34);
+    public static int PurpleStudCount => V(0x140, 0x140);
+    public static int RedBrickSaveFile => V(0x144, 0x144);
 
     // Map constants: 0xA0-byte records, field +0x64 (64-bit: 0x118 bytes, field +0xC0)
     public static int MapRecordSize => V(0xA0, 0x118);

@@ -209,14 +209,7 @@ public class ArchipelagoHandler
                 }
             }
 
-            // Handle Traps
-            if (Mod.GameInstance!.Player1 != null && itemID >= 800 && itemID <= 803)
-            {
-                Mod.GameInstance!.Player1!.ReceiveTrap(itemID);
-                return;
-            }
-
-            if (Mod.GameInstance != null && prevInShop && itemID != 699 && itemID < 800 && itemID > 803)
+            if (Mod.GameInstance != null && prevInShop && itemID != 699 && (itemID < 800 || itemID > 803))
             {
                 // Token or red brick purchasable
                 if ((itemID >= 900 && itemID <= 935) || (itemID >= 213 && itemID <= 425))
@@ -226,13 +219,13 @@ public class ArchipelagoHandler
                 return;
             }
             // If in level select, we give them any item but purple stud
-            if (Mod.GameInstance != null && prevInLevelSelect && itemID != 699 && itemID < 800 && itemID > 803)
+            if (Mod.GameInstance != null && prevInLevelSelect && itemID != 699 && (itemID < 800 || itemID > 803))
             {
                 Game.ManageItem(itemID);
                 return;
             }
             // If the player is controllable, we give them purple studs, any spells/abilities, and Horcruxes
-            if (Mod.GameInstance != null && Game.IsPlayerControllable())
+            if (Mod.GameInstance != null && Game.IsPlayerControllable() && Mod.GameInstance!.Player1 != null)
             {
                 // Handle Spells/Abilities
                 if (itemID >= Game.SpellPurchOffset)
@@ -249,17 +242,28 @@ public class ArchipelagoHandler
                 // Handle Purple Studs
                 if (itemID == 699)
                 {
-                    HubHandler.HandlePurpleStud();
+                    HubHandler.HandleSaveFileItems(itemID, false);
+                    return;
+                }
+                // Handle Trap
+                if (itemID >= 800 && itemID <= 803)
+                {
+                    HubHandler.HandleSaveFileItems(itemID, true);
                     return;
                 }
             }
-            // Handle Purple Stud if player isn't controllable (could be in the menu)
-            if (Mod.GameInstance != null && !Game.IsPlayerControllable() && itemID == 699)
+            // Handle Purple Stud or Trap if player isn't controllable (could be in the menu or loading screen)
+            if ((!Game.IsPlayerControllable() || Mod.GameInstance!.Player1 == null) && (itemID == 699 || (itemID >= 800 && itemID <= 803)))
             {
-                _queuedItems.Enqueue(itemID);
+                EnqueueItem(itemID);
                 return;
             }
         }
+    }
+
+    public void EnqueueItem(int itemID)
+    {
+        _queuedItems.Enqueue(itemID);
     }
 
     // Once Goal is completed, this function is called
@@ -335,21 +339,26 @@ public class ArchipelagoHandler
         }
     }
 
-    // If there are instantenous items (like purple studs and in the future traps) that we queue up because the player wasn't controllable, this is a separate thread that waits until the player is controllable to pass them the item. 
+    // If there are instantenous items (like purple studs and traps) that we queue up because the player wasn't controllable, this is a separate thread that waits until the player is controllable to pass them the item. 
     public void HandleQueuedItems()
     {
         while (true)
         {
             if (_queuedItems.TryPeek(out var itemId))
             {
-                if (Mod.GameInstance != null && Game.IsPlayerControllable())
+                if (Game.IsPlayerControllable() && Mod.GameInstance!.Player1 != null)
                 {
                     if (_queuedItems.TryDequeue(out itemId))
                     {
                         // Console.WriteLine($"Handling queued item with game ID {itemId}");
                         if (itemId == 699)
                         {
-                            HubHandler.HandlePurpleStud();
+                            HubHandler.HandleSaveFileItems((int)itemId, false);
+                            continue;
+                        }
+                        if (itemId >= 800 && itemId <= 803)
+                        {
+                            HubHandler.HandleSaveFileItems((int)itemId, true);
                         }
                     }
                 }
